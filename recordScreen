@@ -1,0 +1,30 @@
+#!/bin/bash
+
+tmp_file="/tmp/vlc_recording.pid"
+
+if [[ -f "${tmp_file}" ]]; then
+	kill "$(cat "${tmp_file}")"
+	rm "${tmp_file}"
+	polybar-msg action recording module_hide >/dev/null
+
+else
+	if (($# == 1)); then
+		video_name="$1"
+	else
+		video_name=$(date +"%d-%m-%Y-%Hu%M-recording.mp4")
+	fi
+	videos_path="$HOME/Videos"
+	output_file="${videos_path}/${video_name}"
+
+	cvlc screen:// \
+		--screen-fps=30 \
+		--screen-top=0 \
+		--screen-left=1920 \
+		--screen-width=1920 \
+		--screen-height=1080 \
+		--sout="#transcode{vcodec=h264}:std{access=file,mux=mp4,dst=${output_file}}" \
+		>/dev/null 2>&1 &
+
+	echo $! > "${tmp_file}"
+	polybar-msg action recording module_show >/dev/null
+fi

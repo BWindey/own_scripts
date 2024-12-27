@@ -1,0 +1,118 @@
+#!/bin/bash
+
+command=$(basename "$0")
+
+# Set default values
+flags=""
+declare -i exit_status=0
+
+# Handle options
+while getopts ":f:eh" opt
+do
+	case "${opt}" in
+		f)	if [[ "${OPTARG}" =~ ^[:a-zA-Z]+$ ]]; then
+				flags="${OPTARG}"
+			else
+				echo "Invalid flags. Flags should only contain 'a-z', 'A-Z' and ':'" 1>&2 && exit 2
+			fi
+			;;
+        e)  exit_status=1
+			;;
+		h)	echo "${command}: A script to help with starting bash-scripts."
+			echo ""
+			echo "Usage:"
+			echo "  ${command} [-f <flags>] [-e] <script_name>"
+			echo ""
+			echo "Flags:"
+			echo "  -f <flags>: flags in getopts-style string for the new script"
+			echo "  -e:         include exit-status \"trap\" in script"
+			exit 0
+			;;
+		\?) echo "Usage: ${command} [-f <flags>] [-e] <script_name>" 1>&2 && exit 1
+			;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
+
+# Rename argument
+script_name="$1"
+
+
+# Create the script
+touch "$script_name"
+chmod u+x "$script_name"
+
+
+# Script header
+if (( exit_status == 1 )); then
+    cat >> "$script_name" <<HEADER
+#!/bin/bash
+set -u -o pipefail -o noclobber
+
+# Display exit status at end of script if \$PRINTEXIT is set to "true" on the host-machine
+# This is a way to more easily check the error-handling locally, without affecting the
+# behaviour on other machines.
+trap 'print_exit_status' EXIT
+print_exit_status() {
+	exitstatus="\$?"
+	[[ "\${PRINTEXIT:-}" == "true" ]] && echo "Exit status: \${exitstatus}"
+}
+
+
+HEADER
+
+else
+    cat >> "$script_name" <<HEADER
+#!/bin/bash
+set -u -o pipefail -o noclobber
+
+
+
+HEADER
+fi
+
+# If no flags are specified, open the document and quit the script
+if [[ "$flags" == "" ]]; then
+	nvim "$script_name" +$
+	exit 0
+fi
+
+
+# Begin the getopts loop and case
+cat >> "$script_name" <<BEGIN
+while getopts "$flags" opt
+do
+	case "\${opt}" in
+BEGIN
+
+
+# Handle the flags
+read -ra flag_array <<< "$( tr -d ':' <<< "$flags" | sed "s/./& /g" )"
+
+if [[ "$flags" =~ ^: ]]; then
+	flag_array+=('\?')
+fi
+
+for flag in "${flag_array[@]}"
+do
+	cat >> "$script_name" <<FLAG
+		${flag})
+			;;
+FLAG
+
+done
+
+
+# End the case and loop
+cat >> "$script_name" <<END
+	esac
+done
+
+shift \$((OPTIND - 1))
+
+
+END
+
+nvim "$script_name" +$

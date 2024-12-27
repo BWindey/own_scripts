@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cpImage() {
+  xclip -sel c -target image/png -i "$1"
+}
+
+cpImage "$1"

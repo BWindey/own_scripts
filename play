@@ -1,0 +1,137 @@
+#!/bin/bash
+set -u -o pipefail -o noclobber
+
+script_name=$(basename "$0")
+
+
+# Default value
+declare -i shuffle=0
+declare -i delay=1
+declare -i do_preset=0
+declare -i list=0
+declare -i background=0
+declare -i quiet=0
+
+
+# Presets
+declare -A presets
+presets[heartbound]="$HOME/Music/Heartbound - OST"
+presets[champions]="$HOME/Music/Champions of Breakfast - OST"
+presets[breakfast]="${presets["champions"]}"
+
+
+# Error function
+error() {
+	echo "Usage: ${script_name} [-s] [-b] [-q] [-d <int>] [<PLAYLIST_FOLDER> | -p <PRESET> | -l | STOP]" 1>&2 && exit "$1"
+}
+
+print_help() {
+	echo "Usage: ${script_name} [-s] [-b] [-q] [-d <int>] [<PLAYLIST_FOLDER> | -p <PRESET> | -l | STOP]"
+	printf "  -s\t\tshuffle\n"
+	printf "  -b\t\tbackground\n"
+	printf "  -q\t\tquiet\n"
+	printf "  -d <int>\tdelay between songs (seconds)\n"
+	printf "  -p <preset>\tchoose a preset"
+	printf "  -l\t\tlist available presets\n"
+}
+
+
+# Option handling
+while getopts ":sd:bqplh" opt
+do
+	case "${opt}" in
+		s)  shuffle=1
+			;;
+		d)	if [[ ! "${OPTARG}" =~ [0-9]+ ]]; then
+				error 1
+			fi
+			delay="${OPTARG}"
+			;;
+		b)	background=1
+			;;
+		q)	quiet=1
+			;;
+		p)  do_preset=1
+			;;
+		l)  list=1
+			;;
+		h)	print_help
+			;;
+		\?) error 1
+			;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
+
+# List presets
+if (( list == 1 )); then
+	keys=("${!presets[@]}")
+	echo "Available presets:"
+	for key in "${keys[@]}"
+	do
+		echo "- ${key}"
+	done
+
+	exit 0
+fi
+
+
+# Additional error-handling
+if (( $# != 1 )); then
+	error 2
+fi
+
+
+# Stop the music if needed
+if [[ $(tr '[:upper:]' '[:lower:]' <<< "$1" ) == "stop" ]]; then
+	pkill mpg123
+	exit 0
+fi
+
+
+# Play from preset
+if (( do_preset == 1 )); then
+	key=$( tr '[:upper:]' '[:lower:]' <<< "$1" )
+	if [ -z "${presets[$key]}" ]; then
+		echo "Preset ${key} not found." 1>&2
+		exit 4
+	fi
+
+	folder_path="${presets[$key]}"
+else
+	# Else, play argument
+	folder_path="$1"
+fi
+
+if [ ! -d "$folder_path" ]; then
+	error 3
+fi
+
+
+# Create flags
+flags="-"
+if (( shuffle == 1)); then
+	flags+="Z"
+fi
+if (( quiet == 1)); then
+	flags+="q"
+fi
+if (( quiet == 1 && background == 0 )); then
+	echo "Info: press 'h' for music controls"
+fi
+
+
+# Play the songs in the folder
+if (( background == 0 )); then
+	mpg123 "$flags" -D "$delay" "${folder_path%/}"/*.mp3
+else
+	echo "Music will start playing in the background. " \
+		"Use \"play stop\" to stop."
+	nohup mpg123 \
+		"$flags" \
+		-D "$delay" \
+		"${folder_path%/}"/*.mp3 \
+		> /dev/null 2>&1 &
+fi

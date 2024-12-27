@@ -1,0 +1,7 @@
+#!/bin/bash
+set -u -o pipefail -o noclobber
+
+
+hour=$(date +"%H")
+minu=$(date +"%M")
+printf " \U1FBF${hour::1}\U1fBF${hour:1:2} : \U1FBF${minu::1}\U1FBF${minu:1:2} \n"
