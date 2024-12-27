@@ -5,7 +5,7 @@ spotify-qt &
 start_librespot() {
 	temp_file="$1"
 	librespot \
-		--cache /home/bram/.cache/librespot/ \
+		--cache "$HOME"/.cache/librespot/ \
 		--enable-oauth \
 		--enable-volume-normalisation \
 		&>"${temp_file}"
