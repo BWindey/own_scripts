@@ -61,9 +61,33 @@ This will run every 5 minutes.
 
 
 ### play
-An abstraction above `mpg123` to allow me to easily play music that I have
-installed. I really need to change this to use something else though, because
-I don't have `mpg123` on my current Linux install.
+An abstraction above `vlc` to play music with some options, like shuffle,
+background or preset.
+Presets are defined inside the script.
+```sh
+$play -h
+
+Usage: play [-s] [-b] [-q] [-d <int>] [<PLAYLIST_FOLDER> | -p <PRESET> | -l | STOP]
+  -s		shuffle
+  -b		background
+  -q		quiet
+  -d <int>	delay between songs (seconds)
+  -p <preset>	choose a preset
+  -l		list available presets
+```
+
+When putting it on the bacground with `-b`, you can stop it with `play stop` to
+correctly stop the music and clean up files.
+
+This also puts a little music-note in my Polybar, the config for that is here:
+```ini
+[module/music]
+type = custom/script
+exec = echo "%{F#83A598}♫%{F-}"
+click-left = play stop
+hidden = true
+```
+It allows you to stop the music when clicking on it.
 
 
 ### wrapper.spotify-qt.sh

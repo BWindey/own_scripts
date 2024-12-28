@@ -3,6 +3,8 @@ set -u -o pipefail -o noclobber
 
 script_name=$(basename "$0")
 
+# Flag to see if we're playing
+temp_play_file="/tmp/vlc_audio_player.pid"
 
 # Default value
 declare -i shuffle=0
@@ -25,13 +27,18 @@ error() {
 	echo "Usage: ${script_name} [-s] [-b] [-q] [-d <int>] [<PLAYLIST_FOLDER> | -p <PRESET> | -l | STOP]" 1>&2 && exit "$1"
 }
 
+stop() {
+	polybar-msg action music module_hide >/dev/null
+	exit 0
+}
+
 print_help() {
 	echo "Usage: ${script_name} [-s] [-b] [-q] [-d <int>] [<PLAYLIST_FOLDER> | -p <PRESET> | -l | STOP]"
 	printf "  -s\t\tshuffle\n"
 	printf "  -b\t\tbackground\n"
 	printf "  -q\t\tquiet\n"
 	printf "  -d <int>\tdelay between songs (seconds)\n"
-	printf "  -p <preset>\tchoose a preset"
+	printf "  -p <preset>\tchoose a preset\n"
 	printf "  -l\t\tlist available presets\n"
 }
 
@@ -56,6 +63,7 @@ do
 		l)  list=1
 			;;
 		h)	print_help
+			exit 0
 			;;
 		\?) error 1
 			;;
@@ -86,7 +94,11 @@ fi
 
 # Stop the music if needed
 if [[ $(tr '[:upper:]' '[:lower:]' <<< "$1" ) == "stop" ]]; then
-	pkill mpg123
+	if [[ -f "${temp_play_file}" ]]; then
+		kill "$(cat "${temp_play_file}")"
+		rm "${temp_play_file}"
+		stop
+	fi
 	exit 0
 fi
 
@@ -110,28 +122,37 @@ if [ ! -d "$folder_path" ]; then
 fi
 
 
-# Create flags
-flags="-"
-if (( shuffle == 1)); then
-	flags+="Z"
-fi
-if (( quiet == 1)); then
-	flags+="q"
-fi
-if (( quiet == 1 && background == 0 )); then
-	echo "Info: press 'h' for music controls"
-fi
-
+# Set little music note in polybar
+polybar-msg action music module_show >/dev/null
 
 # Play the songs in the folder
 if (( background == 0 )); then
-	mpg123 "$flags" -D "$delay" "${folder_path%/}"/*.mp3
+	tmp_file="$(mktemp)"
+	stop_() { rm "$tmp_file"; stop; }
+	trap stop_ SIGINT
+
+	if (( shuffle == 1 )); then
+		find "${folder_path%/}" -maxdepth 1 -name "*.mp3" | shuf >> "$tmp_file"
+		while read -r file; do
+			(( quiet == 0 )) && echo "Now playing: $(basename "$file")"
+			cvlc --play-and-exit "$file" 2>/dev/null
+			sleep "$delay"
+		done < "$tmp_file"
+	else
+		for file in "${folder_path%/}"/*.mp3; do
+			(( quiet == 0 )) && echo "Now playing: $(basename "$file")"
+			cvlc --play-and-exit "$file" 2>/dev/null
+			sleep "$delay"
+		done
+	fi
+	trap - SIGINT
 else
-	echo "Music will start playing in the background. " \
-		"Use \"play stop\" to stop."
-	nohup mpg123 \
-		"$flags" \
-		-D "$delay" \
-		"${folder_path%/}"/*.mp3 \
-		> /dev/null 2>&1 &
+	echo "Music will start playing in the background. Use \"${script_name} stop\" to stop."
+	if (( shuffle == 1 )); then
+		cvlc --random "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
+		echo $! > "${temp_play_file}"
+	else
+		cvlc --loop "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
+		echo $! > "${temp_play_file}"
+	fi
 fi
