@@ -102,6 +102,13 @@ if [[ $(tr '[:upper:]' '[:lower:]' <<< "$1" ) == "stop" ]]; then
 	exit 0
 fi
 
+# If music is already playing, don't start extra music
+if [[ -f "${temp_play_file}" ]]; then
+	echo "Already playing music (${temp_play_file} exists), not starting new music." 1>&2
+	exit 5
+fi
+
+
 
 # Play from preset
 if (( do_preset == 1 )); then
