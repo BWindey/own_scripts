@@ -1,6 +1,0 @@
-#!/bin/bash
-set -u -o pipefail -o noclobber
-
-
-
-echo "me"
