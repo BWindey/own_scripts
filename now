@@ -1,7 +1,67 @@
 #!/bin/bash
 set -u -o pipefail -o noclobber
 
+scriptname=$(basename "$0")
 
-hour=$(date +"%H")
-minu=$(date +"%M")
-printf " \U1FBF${hour::1}\U1fBF${hour:1:2} : \U1FBF${minu::1}\U1FBF${minu:1:2} \n"
+usage() {
+	echo "Usage: ${scriptname} [-l] [-s]"
+}
+
+print_help() {
+	echo "Display the current time with nice unicode."
+	echo ""
+	echo "Usage:"
+	echo "  ${scriptname} [-l] [-s]"
+	echo ""
+	echo "Flags:"
+	echo "  -l    Play in infinite loop"
+	echo "  -s    Also display seconds"
+}
+
+declare -i show_seconds=0
+declare -i do_loop=0
+
+while getopts "lsh" opt
+do
+	case "${opt}" in
+		s)  show_seconds=1
+			;;
+		l)  do_loop=1
+			;;
+		h)  print_help && exit 0
+			;;
+		\?) usage && exit 1
+	esac
+done
+
+shift $((OPTIND - 1))
+
+print_time() {
+	hour=$(date +"%H")
+	minu=$(date +"%M")
+	sec=$(date +"%S")
+
+	format_string="\U1FBF${hour::1}\U1FBF${hour:1:2}:\U1FBF${minu::1}\U1FBF${minu:1:2}"
+
+	if (($1 == 1)); then
+		format_string+=":\U1FBF${sec::1}\U1FBF${sec:1:2}"
+	fi
+
+	printf "\033[2K ${format_string}\r"
+}
+
+if ((do_loop == 1)); then
+	# Hide cursor
+	tput civis
+	trap 'tput cnorm; exit' SIGINT
+	clear
+	echo ""
+
+	while true; do
+		print_time "$show_seconds"
+		sleep 0.2
+	done
+else
+	print_time "$show_seconds"
+	echo ""
+fi

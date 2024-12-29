@@ -34,6 +34,19 @@ $ now
 
  🯲🯳 : 🯵🯲
 ```
+```sh
+$ now -h
+
+Display the current time with nice unicode.
+
+Usage:
+  now [-l] [-s]
+
+Flags:
+  -l    Play in infinite loop
+  -s    Also display seconds
+```
+
 
 
 ### cpImage
