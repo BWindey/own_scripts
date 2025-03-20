@@ -142,13 +142,13 @@ if (( background == 0 )); then
 		find "${folder_path%/}" -maxdepth 1 -name "*.mp3" | shuf >> "$tmp_file"
 		while read -r file; do
 			(( quiet == 0 )) && echo "Now playing: $(basename "$file")"
-			cvlc --play-and-exit "$file" 2>/dev/null
+			cvlc --gain 0.3 --play-and-exit "$file" 2>/dev/null
 			sleep "$delay"
 		done < "$tmp_file"
 	else
 		for file in "${folder_path%/}"/*.mp3; do
 			(( quiet == 0 )) && echo "Now playing: $(basename "$file")"
-			cvlc --play-and-exit "$file" 2>/dev/null
+			cvlc --gain 0.3 --play-and-exit "$file" 2>/dev/null
 			sleep "$delay"
 		done
 	fi
@@ -156,10 +156,10 @@ if (( background == 0 )); then
 else
 	echo "Music will start playing in the background. Use \"${script_name} stop\" to stop."
 	if (( shuffle == 1 )); then
-		cvlc --random "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
+		cvlc --gain 0.3 --random "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
 		echo $! > "${temp_play_file}"
 	else
-		cvlc --loop "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
+		cvlc --gain 0.3 --loop "${folder_path%/}/"*.mp3 >/dev/null 2>&1 &
 		echo $! > "${temp_play_file}"
 	fi
 fi
