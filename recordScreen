@@ -19,7 +19,6 @@ else
 	cvlc screen:// \
 		--screen-fps=30 \
 		--screen-top=0 \
-		--screen-left=1920 \
 		--screen-width=1920 \
 		--screen-height=1080 \
 		--sout="#transcode{vcodec=h264}:std{access=file,mux=mp4,dst=${output_file}}" \
