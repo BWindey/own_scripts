@@ -57,6 +57,8 @@ if ((do_loop == 1)); then
 	clear
 	echo ""
 
+	(sleep 1; clear; echo "") &
+
 	while true; do
 		print_time "$show_seconds"
 		sleep 0.2
