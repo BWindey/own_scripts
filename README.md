@@ -128,3 +128,21 @@ hidden = true
 The script is a simple toggle, but if you want to start recording, you can pass
 an additional argument that will serve as filename.
 All video-files are stored in `~/Videos/`.
+
+
+### openpdf
+I like zathura as my pdf viewer, but opening files with it from within zathura
+is not fun. So this script is a solution to that, it combines `fd` (like `find`)
+with `rofi` (for UI) to select a file, and opens the selected file in `zathura`.
+
+Best to be enjoyed as either a shortcut for your window manager or as a
+desktop entry for your app launcher (like `rofi`):
+```desktop
+[Desktop Entry]
+Name=Open PDF
+Type=Application
+Comment=Search pdf with fd and rofi, and open in zathura
+Exec=/path/to/openpdf.sh
+Terminal=false
+```
+
