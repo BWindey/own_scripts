@@ -1,0 +1,67 @@
+#!/bin/bash
+
+ROFI_PREFIX="$HOME/.config/rofi/"            # "config.[light|dark].rasi"
+POLYBAR_PREFIX="$HOME/.config/polybar/"      # "config.[light|dark].ini"
+GIT_DELTA_FILE="$HOME/.gitconfig"            # "gruvbox-[light|dark]"
+NVIM_RPC_DIR="${XDG_RUNTIME_DIR}"            # "/nvim.*"
+
+# Read current theme
+theme_status=$(gsettings get org.gnome.desktop.interface color-scheme)
+
+next_theme=""
+case $theme_status in
+	"'prefer-light'")
+		next_theme="dark"
+		;;
+	"'prefer-dark'")
+		next_theme="light"
+		;;
+	*)
+		echo "[WARNING] Invalid theme_status found in gsettings: $theme_status" >&2
+		echo "[.......] Setting theme to 'dark'" >&2
+		next_theme="dark"
+esac
+
+
+# Overall
+if [[ "$next_theme" == light ]]; then
+	gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+else
+	gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+fi
+
+# Rofi
+if [[ "$next_theme" == light ]]; then
+	ln -sf "${ROFI_PREFIX}/config.light.rasi" "${ROFI_PREFIX}/config.rasi"
+else
+	ln -sf "${ROFI_PREFIX}/config.dark.rasi" "${ROFI_PREFIX}/config.rasi"
+fi
+
+
+# Polybar
+if [[ "$next_theme" == light ]]; then
+	ln -sf "${POLYBAR_PREFIX}/config.light.ini" "${POLYBAR_PREFIX}/config.ini"
+else
+	ln -sf "${POLYBAR_PREFIX}/config.dark.ini" "${POLYBAR_PREFIX}/config.ini"
+fi
+polybar-msg cmd restart >/dev/null 2>&1
+
+
+# Delta
+if [[ "$next_theme" == light ]]; then
+	sed -i "s/gruvbox-dark/gruvbox-light/" "$GIT_DELTA_FILE"
+else
+	sed -i "s/gruvbox-light/gruvbox-dark/" "$GIT_DELTA_FILE"
+fi
+
+
+# Neovim
+for server in "${NVIM_RPC_DIR}"/nvim.*; do
+  [ -S "$server" ] || continue
+
+  if [[ "$next_theme" == light ]]; then
+	  nvim --server "$server" --remote-send "<cmd>set background=light<CR>"
+  else
+	  nvim --server "$server" --remote-send "<cmd>set background=dark<CR>"
+  fi
+done

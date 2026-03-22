@@ -146,3 +146,18 @@ Exec=/path/to/openpdf.sh
 Terminal=false
 ```
 
+
+## switch_theme
+i3wm does not come with a theme switcher built in, so I hacked one together on
+top of `xdg-desktop-portal` (freedesktop stuffies) and `gsettings` to interact
+with it from the commandline.
+
+The script toggles the freedesktop preference, which is respected by Firefox,
+Discord and Ghostty. That leaves Rofi, Polybar and Neovim which need to be
+updated manually. This was pretty easy by duplicating the config for those
+first two and symlinking either the light or dark version to  the real config.
+For Neovim I needed to connect via nvim's RPC socket, which, after finding out
+about it, also turned out to be pretty easy.
+
+The only thing left is making a keybind inside i3 to toggle this script and
+tada!
