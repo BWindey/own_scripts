@@ -1,7 +1,8 @@
 #!/bin/bash
 
-ROFI_PREFIX="$HOME/.config/rofi/"            # "config.[light|dark].rasi"
-POLYBAR_PREFIX="$HOME/.config/polybar/"      # "config.[light|dark].ini"
+ROFI_PREFIX="$HOME/.config/rofi"             # "config.[light|dark].rasi"
+POLYBAR_PREFIX="$HOME/.config/polybar"       # "config.[light|dark].ini"
+DUNST_PREFIX="$HOME/.config/dunst"           # "[light|dark].dunstrc"
 GIT_DELTA_FILE="$HOME/.gitconfig"            # "gruvbox-[light|dark]"
 NVIM_RPC_DIR="${XDG_RUNTIME_DIR}"            # "/nvim.*"
 
@@ -45,6 +46,15 @@ else
 	ln -sf "${POLYBAR_PREFIX}/config.dark.ini" "${POLYBAR_PREFIX}/config.ini"
 fi
 polybar-msg cmd restart >/dev/null 2>&1
+
+
+# Dunst
+if [[ "$next_theme" == light ]]; then
+	ln -sf "${DUNST_PREFIX}/light.dunstrc" "${DUNST_PREFIX}/dunstrc"
+else
+	ln -sf "${DUNST_PREFIX}/dark.dunstrc" "${DUNST_PREFIX}/dunstrc"
+fi
+dunstctl reload
 
 
 # Delta
